@@ -1,139 +1,198 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Simple Image App</title>
-  <meta name="google-site-verification" content="BX4EgKobAFxsJ9vJ77uP-Uax8Sn1mgeVwXw_1T5mb10" />
-  <style>
-    body { font-family: Arial; background: #f2f2f2; padding: 20px; }
-    .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
-    input, button { width: 100%; padding: 10px; margin: 10px 0; }
-    #imageDisplay img { max-width: 100%; height: auto; margin: 10px 0; cursor: pointer; }
-    .image-box { border: 1px solid #ccc; padding: 10px; margin: 10px 0; text-align: center; }
-    #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; }
-    #modal img { max-width: 90%; max-height: 90%; }
-    .download-btn { background: #28a745; color: white; border: none; padding: 10px; cursor: pointer; text-decoration: none; }
-  </style>
-</head>
-<body>
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.support import expected_conditions as EC
+import streamlit as st
 
-<div class="container">
-  <h2>Simple Image Storage App</h2>
+st.set_page_config(
+    page_title="Unified E-Government Portal",
+    page_icon="🏛️",
+    layout="wide"
+)
 
-  <div id="authSection">
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="register()">Register</button>
-    <button onclick="login()">Login</button>
-  </div>
+st.title("🏛️ Unified E-Government Portal")
+st.markdown("---")
 
-  <div id="mainApp" style="display:none;">
-    <h3>Welcome!</h3>
-    <button onclick="logout()">Logout</button>
+# Layout
+left, right = st.columns([1, 3])
 
-    <h4>Upload Image</h4>
-    <input type="file" id="imgInput">
-    <input type="text" id="imgName" placeholder="Enter image name">
-    <button onclick="uploadImage()">Upload</button>
+# LEFT SIDE MENU
+with left:
 
-    <h4>Search Image</h4>
-    <input type="text" id="searchName" placeholder="Search by image name">
-    <button onclick="fetchImage()">Search</button>
+    st.subheader("Services")
 
-    <div id="imageDisplay"></div>
-  </div>
-</div>
+    service = st.radio(
+        "",
+        [
+            "Scholarship",
+            "MeeSeva Status"
+        ]
+    )
 
-<div id="modal" onclick="this.style.display='none'">
-  <img id="modalImg">
-</div>
+# RIGHT SIDE CONTENT
+with right:
 
-<script>
-  let currentUser = null;
+    if service == "Scholarship":
 
-  function register() {
-    const email = document.getElementById("email").value.trim();
-    const pass = document.getElementById("password").value.trim();
-    if (!email || !pass) return alert("Enter email & password");
+        st.subheader("Scholarship Status")
 
-    let users = JSON.parse(localStorage.getItem("users") || "{}");
-    if (users[email]) return alert("User already exists");
+        app_number = st.text_input(
+            "Application Number"
+        )
 
-    users[email] = pass;
-    localStorage.setItem("users", JSON.stringify(users));
-    alert("Registered successfully");
-  }
+        year = st.selectbox(
+            "Academic Year",
+            [
+                "2024-25",
+                "2023-24",
+                "2022-23"
+            ]
+        )
 
-  function login() {
-    const email = document.getElementById("email").value.trim();
-    const pass = document.getElementById("password").value.trim();
-    let users = JSON.parse(localStorage.getItem("users") || "{}");
+        if st.button("Get Status"):
 
-    if (users[email] === pass) {
-      currentUser = email;
-      document.getElementById("authSection").style.display = "none";
-      document.getElementById("mainApp").style.display = "block";
-      alert("Login successful");
-    } else {
-      alert("Invalid credentials");
-    }
-  }
+            if app_number == "":
+                st.error("Please Enter Application Number")
 
-  function logout() {
-    currentUser = null;
-    document.getElementById("authSection").style.display = "block";
-    document.getElementById("mainApp").style.display = "none";
-  }
+            else:
 
-  function uploadImage() {
-    const file = document.getElementById("imgInput").files[0];
-    const name = document.getElementById("imgName").value.trim();
-    if (!file || !name) return alert("Select file and enter name");
+                with st.spinner("Opening Scholarship Portal..."):
 
-    const reader = new FileReader();
-    reader.onload = function () {
-      const base64 = reader.result;
-      const key = `${currentUser}_${name}`;
-      localStorage.setItem(key, base64);
-      alert("Image uploaded");
-    };
-    reader.readAsDataURL(file);
-  }
+                    try:
 
-  function fetchImage() {
-    const name = document.getElementById("searchName").value.trim();
-    const key = `${currentUser}_${name}`;
-    const data = localStorage.getItem(key);
+                        driver = webdriver.Chrome()
 
-    const display = document.getElementById("imageDisplay");
-    display.innerHTML = "";
+                        driver.get(
+                            "https://tgepass.cgg.gov.in/HomeServicePostmatricKnowApplication"
+                        )
 
-    if (data) {
-      const box = document.createElement("div");
-      box.className = "image-box";
+                        wait = WebDriverWait(driver, 10)
 
-      const img = document.createElement("img");
-      img.src = data;
-      img.onclick = () => showModal(data);
+                        inputs = wait.until(
+                            EC.presence_of_all_elements_located(
+                                (By.TAG_NAME, "input")
+                            )
+                        )
 
-      const link = document.createElement("a");
-      link.href = data;
-      link.download = name + ".png";
-      link.innerText = "Download";
-      link.className = "download-btn";
+                        inputs[0].send_keys(app_number)
 
-      box.appendChild(img);
-      box.appendChild(link);
-      display.appendChild(box);
-    } else {
-      display.innerText = "Image not found";
-    }
-  }
+                        try:
+                            select = Select(
+                                driver.find_element(
+                                    By.TAG_NAME,
+                                    "select"
+                                )
+                            )
 
-  function showModal(url) {
-    document.getElementById("modalImg").src = url;
-    document.getElementById("modal").style.display = "flex";
-  }
-</script>
+                            select.select_by_visible_text(year)
 
-</body>
-</html>
+                        except:
+                            st.error("Dropdown Not Found")
+
+                        try:
+
+                            get_status_btn = driver.find_element(
+                                By.XPATH,
+                                "//*[contains(text(),'Get Status')]"
+                            )
+
+                            get_status_btn.click()
+
+                        except:
+
+                            try:
+
+                                get_status_btn = driver.find_element(
+                                    By.XPATH,
+                                    "//input[contains(@value,'Get Status')]"
+                                )
+
+                                get_status_btn.click()
+
+                            except:
+
+                                st.warning(
+                                    "Get Status Button Not Found"
+                                )
+
+                        st.success(
+                            "Request Submitted Successfully"
+                        )
+
+                    except Exception as e:
+
+                        st.error(str(e))
+
+    elif service == "MeeSeva Status":
+
+        st.subheader("MeeSeva Application Status")
+
+        app_no = st.text_input(
+            "Application Number"
+        )
+
+        if st.button("Get Data"):
+
+            if app_no == "":
+
+                st.error(
+                    "Please Enter Application Number"
+                )
+
+            else:
+
+                try:
+
+                    st.info(
+                        "Opening MeeSeva Portal..."
+                    )
+
+                    driver = webdriver.Chrome()
+
+                    driver.maximize_window()
+
+                    driver.get(
+                        "https://ts.meeseva.telangana.gov.in/meeseva/home.htm"
+                    )
+
+                    wait = WebDriverWait(
+                        driver,
+                        20
+                    )
+
+                    # Find Application Status Field
+
+                    status_box = wait.until(
+                        EC.element_to_be_clickable(
+                            (
+                                By.ID,
+                                "searchAppl"
+                            )
+                        )
+                    )
+
+                    status_box.clear()
+
+                    status_box.send_keys(
+                        app_no
+                    )
+
+                    st.success(
+                        "Application Number Filled"
+                    )
+
+                    # Click Search Icon
+
+                    driver.execute_script(
+                        "goApplicationStatus();"
+                    )
+
+                    st.success(
+                        "Search Submitted Successfully"
+                    )
+
+                except Exception as e:
+
+                    st.error(
+                        str(e)
+                    )
